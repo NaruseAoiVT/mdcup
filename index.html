@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MDCUP ポイントチェッカー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="dynFonts" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link id="themeFonts" rel="stylesheet">
+<style>
+:root{
+  --accent:#8cdcfa;
+  --accent-dim:rgba(140,220,250,.16);
+  --on-accent:#181818;
+  --grad:linear-gradient(90deg,#8cdcfa,#c9bdf5 52%,#f2c2ee);
+  --void:#181818;
+  --glass:rgba(24,24,24,.72);
+  --glass-2:rgba(24,24,24,.82);
+  --text:#ffffff;
+  --muted:#a8a8a8;
+  --warn:#e5484d;
+  --warn-soft:#ff8a8d;
+  --ink:#181818;
+  --ink-2:#4e4e4e;
+  --paper:#ffffff;
+  --paper-2:#f0f0f0;
+  --rule:#d4d4d4;
+  --lilac-deep:#6b62c4;
+  --font-display:'Noto Sans JP',sans-serif;
+  --font-body:'Noto Sans JP',-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',Meiryo,sans-serif;
+  --scrim:.6;
+  --grain:0;
+  --mark:.10;
+  --cut:14px;
+  --gutter:clamp(16px,4vw,40px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--void);scroll-behavior:smooth;scrollbar-color:#f2c2ee var(--paper-2)}
+body{
+  font-family:var(--font-body);
+  font-size:15px;line-height:1.8;color:var(--ink);
+  background:var(--paper-2);
+  -webkit-font-smoothing:antialiased;min-height:100vh;
+}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--paper-2)}
+::-webkit-scrollbar-thumb{background:#f2c2ee}
+.wrap{max-width:1120px;margin:0 auto;padding:0 var(--gutter)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.dark :focus-visible{outline-color:var(--accent)}
+.sparkle{display:inline-block;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+.dark{background:var(--void);color:var(--text)}
+.dots{position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.09) 1px,transparent 1.4px);background-size:16px 16px}
+
+#progress{position:fixed;top:0;left:0;height:3px;width:0;z-index:60;background:var(--grad);pointer-events:none}
+
+.topbar{position:relative;z-index:40;height:64px;display:flex;align-items:center;gap:24px;
+  padding:0 0 0 var(--gutter);background:var(--void);color:#fff}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;
+  font-weight:900;font-size:20px;letter-spacing:.02em}
+.brand .sparkle{font-size:18px}
+.topnav{margin-left:auto;display:flex;gap:26px}
+.topnav a{color:#fff;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.06em;position:relative}
+.topnav a::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:2px;background:var(--grad);
+  transform:scaleX(0);transform-origin:left;transition:transform .25s ease}
+.topnav a:hover::after{transform:scaleX(1)}
+.menu-box{align-self:stretch;width:84px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:#000;color:#fff;text-decoration:none;font-size:11px;font-weight:900;letter-spacing:.12em;
+  clip-path:polygon(0 0,100% 0,100% 100%,14px 100%,0 calc(100% - 14px))}
+.menu-box i{display:block;width:18px;height:2px;background:var(--grad)}
+.menu-box:hover{background:#2a2a2a}
+body.admin .topnav,body.admin .menu-box{display:none}
+@media(max-width:760px){.topnav{display:none}.menu-box{margin-left:auto}}
+
+.hero{position:relative;overflow:hidden;background:var(--void);color:var(--text);
+  min-height:clamp(520px,78vh,700px);display:flex;flex-direction:column;justify-content:flex-end}
+#bgImage,#bgScrim,#bgMark,#grain,#scan,.ghost{position:absolute;inset:0;pointer-events:none}
+#bgImage{z-index:0;background-size:cover;background-position:center;background-repeat:no-repeat;
+  background-color:var(--void);filter:blur(1.5px);transform:scale(1.04)}
+#bgScrim{z-index:1;background:
+  linear-gradient(180deg,rgba(24,24,24,calc(var(--scrim) * .5)) 0%,rgba(24,24,24,var(--scrim)) 45%,rgba(24,24,24,.96) 100%)}
+#bgMark{z-index:1;opacity:var(--mark);background-repeat:no-repeat;background-position:right 6% center;
+  background-size:min(560px,70vw) auto;filter:grayscale(1) contrast(1.2)}
+#grain{z-index:2;opacity:var(--grain);mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:220px 220px}
+#scan{z-index:2;opacity:0;background:repeating-linear-gradient(180deg,rgba(255,255,255,.055) 0 1px,transparent 1px 3px)}
+.hero .dots{z-index:2}
+.ghost{z-index:2;display:flex;flex-direction:column;justify-content:center;gap:.1em;overflow:hidden;
+  transform:rotate(-8deg) scale(1.15);font-weight:900;line-height:.95;letter-spacing:-.02em;
+  font-size:clamp(90px,13vw,200px);color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.07);white-space:nowrap}
+.ghost span{display:block}
+.ghost span:nth-child(2){padding-left:18%}
+.hero-inner{position:relative;z-index:3;width:100%;padding:120px var(--gutter) 0}
+.hero-logo{max-width:min(360px,70vw);max-height:120px;margin:0 0 22px;display:none}
+.hero-logo.on{display:block}
+.kicker{display:block;font-size:11px;letter-spacing:.2em;color:var(--accent);font-weight:900;text-transform:uppercase;margin-bottom:14px}
+.wordmark{font-family:var(--font-display);font-weight:900;font-size:clamp(56px,11.5vw,168px);
+  line-height:.9;letter-spacing:-.045em;margin-left:-.04em;color:var(--text);text-transform:uppercase}
+.wordmark span{display:block}
+.hero-row{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;margin-top:26px;flex-wrap:wrap}
+.hero h1{font-size:clamp(19px,2.4vw,24px);font-weight:900;letter-spacing:.06em;line-height:1.5}
+.hero-sub{color:var(--muted);font-size:12.5px;margin-top:8px;max-width:48ch}
+.plate{text-align:right;background:var(--glass);padding:14px 20px 12px 26px;
+  clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)))}
+.plate .plabel{display:block;font-size:10px;letter-spacing:.24em;font-weight:900;color:#f2c2ee}
+.plate .pval{font-family:var(--font-display);font-weight:900;font-size:64px;line-height:1;letter-spacing:-.03em}
+.plate .punit{font-weight:900;font-size:18px;margin-left:6px;color:var(--muted)}
+.hero-steps{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);margin-top:34px;
+  border-top:1px solid rgba(255,255,255,.28)}
+.hero-steps li{display:flex;align-items:baseline;gap:12px;padding:16px 0 22px;font-size:13px;font-weight:700}
+.hero-steps li+li{padding-left:18px;border-left:1px solid rgba(255,255,255,.12)}
+.hero-steps b{font-weight:900;font-size:11px;letter-spacing:.14em;color:var(--muted)}
+@media(max-width:720px){
+  .hero-inner{padding-top:72px}
+  .hero-row{flex-direction:column;align-items:flex-start}
+  .plate{text-align:left}
+  .hero-steps{grid-template-columns:1fr}
+  .hero-steps li{padding:10px 0}
+  .hero-steps li+li{padding-left:0;border-left:0;border-top:1px solid rgba(255,255,255,.12)}
+}
+
+.gauge-shell{position:sticky;top:0;z-index:30;background:var(--void);color:var(--text);padding:14px 0 12px}
+.gauge-shell::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--grad)}
+.gauge-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:9px}
+.gauge-label{font-size:11px;letter-spacing:.14em;font-weight:900}
+.gauge-label small{font-size:10px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-left:8px}
+.gauge-num{font-family:var(--font-display);font-weight:900;font-size:30px;line-height:1;letter-spacing:-.02em}
+.gauge-num .cur{color:var(--text)}
+.gauge-num.over .cur{color:var(--warn-soft)}
+.gauge-num .cap{color:var(--muted);font-size:15px;letter-spacing:0}
+.ticks{display:flex;gap:3px;height:14px}
+.tick{flex:1;background:rgba(255,255,255,.08);transition:background .2s ease}
+.tick.on{background:#f0f0f0}
+.tick.over{background:var(--warn)}
+.gauge-msg{margin-top:8px;font-size:12.5px;font-weight:700;min-height:1.7em}
+.gauge-msg.ok{color:var(--accent)} .gauge-msg.ng{color:var(--warn-soft)}
+.gauge-msg.idle{color:var(--muted);font-weight:400}
+
+.band{position:relative;padding:clamp(56px,8vw,92px) 0;scroll-margin-top:96px}
+.band.light{background:var(--paper)}
+.band.grey{background:var(--paper-2)}
+.band.dark{overflow:hidden}
+.band > .wrap{position:relative;z-index:1}
+.shead{position:relative;margin-bottom:14px;padding-bottom:16px;border-bottom:1px solid var(--ink)}
+.dark .shead{border-bottom-color:rgba(255,255,255,.4)}
+.shead::before{content:attr(data-ghost);position:absolute;right:0;bottom:-.14em;z-index:-1;
+  font-weight:900;font-size:clamp(60px,10vw,130px);line-height:1;letter-spacing:-.04em;white-space:nowrap;
+  color:transparent;-webkit-text-stroke:1px rgba(24,24,24,.08);pointer-events:none}
+.dark .shead::before{-webkit-text-stroke-color:rgba(255,255,255,.08)}
+.shead .en{font-family:var(--font-display);font-weight:900;font-size:clamp(36px,6vw,58px);
+  line-height:1;letter-spacing:-.035em;text-transform:uppercase}
+.shead .en .sparkle{font-size:.4em;vertical-align:top;margin-left:6px;letter-spacing:0}
+.shead h2{font-size:13px;font-weight:900;letter-spacing:.08em;margin-top:8px}
+.sub{color:var(--ink-2);font-size:13px;margin-bottom:26px}
+.dark .sub{color:var(--muted)}
+
+label{display:block;font-size:11px;letter-spacing:.06em;color:var(--ink-2);font-weight:700;margin:0 0 6px}
+.field{margin-bottom:14px}
+input[type=text],input[type=number],input[type=url],select{
+  width:100%;background:var(--paper);border:1px solid #bdbdbd;border-radius:0;
+  color:var(--ink);padding:10px 12px;font-family:inherit;font-size:14px}
+input::placeholder{color:#9a9a9a}
+input:focus,select:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+input:disabled{background:var(--paper-2);color:#9a9a9a}
+input[type=color]{width:100%;height:42px;background:var(--paper);border:1px solid #bdbdbd;padding:3px;cursor:pointer;border-radius:0}
+input[type=range]{width:100%;accent-color:var(--ink);background:transparent}
+select{appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:32px}
+.check{display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;background:var(--paper-2);border:1px solid transparent}
+.check:hover{border-color:#bdbdbd}
+.check input{accent-color:var(--ink);margin-top:4px;flex-shrink:0}
+.check span{font-size:13px;line-height:1.5;color:var(--ink);letter-spacing:0;font-weight:700}
+.check span i{display:block;font-style:normal;color:var(--ink-2);font-size:11px;font-weight:400;margin-top:2px}
+.team-field{max-width:460px;margin-bottom:26px}
+
+.members{display:grid;gap:18px;grid-template-columns:repeat(3,1fr)}
+@media(max-width:860px){.members{grid-template-columns:1fr}}
+.member{position:relative;background:var(--paper);border:1px solid var(--ink);
+  clip-path:polygon(0 0,100% 0,100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)))}
+.member::after{content:"";position:absolute;left:-1px;bottom:-1px;width:var(--cut);height:var(--cut);
+  background:linear-gradient(45deg,transparent calc(50% - .7px),var(--ink) 0 calc(50% + .7px),transparent 0)}
+.member-head{display:flex;align-items:center;justify-content:space-between;background:var(--void);color:#fff;
+  padding:12px 16px;border-bottom:2px solid transparent;border-image:var(--grad) 1}
+.slot{font-weight:900;font-size:13px;letter-spacing:.14em}
+.pt-badge{font-family:var(--font-display);font-weight:900;font-size:30px;line-height:1;letter-spacing:-.02em;color:#fff;text-align:right}
+.pt-badge.zero{color:#4e4e4e}
+.pt-badge.blocked{font-size:12px;color:var(--warn-soft);letter-spacing:.08em}
+.pt-badge small{font-size:11px;color:#a8a8a8;letter-spacing:.1em;margin-left:4px}
+.member-body{padding:16px 16px 20px}
+.breakdown{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.breakdown:empty{display:none}
+.breakdown div{display:flex;justify-content:space-between;padding:1px 0}
+.breakdown .v{color:var(--ink);font-weight:700}
+.breakdown .v.minus{color:var(--warn)} .breakdown .v.plus{color:var(--lilac-deep)}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--ink);background:var(--paper)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:540px;font-variant-numeric:tabular-nums}
+th,td{padding:11px 10px;text-align:center;border-bottom:1px solid var(--rule)}
+thead th{background:var(--void);color:#fff;font-size:11px;letter-spacing:.08em;font-weight:900;border-bottom:0}
+tbody th{text-align:left;font-weight:900;font-size:13px;white-space:nowrap;background:var(--paper-2)}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:none}
+td{color:#8a8a8a}
+td.mid{color:var(--ink);font-weight:700}
+td.hi{color:#fff;background:var(--void);font-weight:900}
+.notice{position:relative;background:var(--paper-2);padding:14px 18px 14px 20px;font-size:12.5px;color:var(--ink-2);margin-top:20px}
+.notice::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--grad)}
+.band.grey .notice{background:var(--paper)}
+.notice b{color:var(--ink);font-weight:900}
+.notice.warn::before{background:var(--warn)}
+
+.btn{position:relative;display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;
+  font-family:var(--font-body);font-size:16px;font-weight:900;letter-spacing:.08em;text-align:left;
+  padding:0 0 0 26px;min-height:64px;border:1px solid var(--ink);background:var(--void);color:#fff;
+  clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,0 100%);transition:background .2s ease,color .2s ease}
+.btn::after{content:"→";flex:0 0 64px;align-self:stretch;display:flex;align-items:center;justify-content:center;
+  font-size:20px;background:#000;color:#fff;transition:background .2s ease}
+.btn:hover:not(:disabled){background:#2a2a2a}
+.dark .btn{background:#fff;color:var(--ink);border-color:#fff}
+.dark .btn::after{background:var(--ink)}
+.dark .btn:hover:not(:disabled){background:#f0f0f0}
+.btn:disabled,.dark .btn:disabled{background:transparent;color:#6f6f6f;border-color:#4e4e4e;cursor:not-allowed}
+.btn:disabled::after{background:#2a2a2a;color:#6f6f6f}
+.band:not(.dark) .btn:disabled{color:#9a9a9a;border-color:#bdbdbd}
+.band:not(.dark) .btn:disabled::after{background:#e2e2e2;color:#9a9a9a}
+.btn-note{font-size:12px;color:var(--muted);margin-top:12px}
+.btn-sub{display:inline-block;background:none;border:1px solid #bdbdbd;color:var(--ink-2);font-family:inherit;font-size:12px;font-weight:700;
+  padding:10px 16px;margin-top:14px;cursor:pointer;border-radius:0}
+.btn-sub:hover{border-color:var(--ink);color:var(--ink)}
+.dark .btn-sub{border-color:#4e4e4e;color:var(--muted)}
+.dark .btn-sub:hover{border-color:#fff;color:#fff}
+.entry-box{max-width:620px}
+.entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,64px);align-items:end}
+@media(max-width:820px){.entry-grid{grid-template-columns:1fr}}
+.entry-lead{font-size:clamp(20px,2.6vw,28px);font-weight:900;line-height:1.5;letter-spacing:.04em}
+.entry-lead + p{color:var(--muted);font-size:13px;margin-top:10px}
+
+footer{background:#111;color:#a8a8a8;font-size:11.5px;padding:26px 0 40px}
+footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.linkish{background:none;border:1px solid #4e4e4e;color:#fff;font:inherit;font-size:11.5px;font-weight:700;letter-spacing:.06em;
+  cursor:pointer;padding:8px 14px}
+.linkish:hover{border-color:#fff}
+
+.to-top{position:fixed;right:16px;bottom:16px;z-index:50;width:52px;height:52px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;background:var(--void);color:#fff;text-decoration:none;
+  font-size:9px;font-weight:900;letter-spacing:.14em;line-height:1.3;opacity:0;pointer-events:none;transition:opacity .25s ease;
+  clip-path:polygon(var(--cut) 0,100% 0,100% 100%,0 100%,0 var(--cut))}
+.to-top.on{opacity:1;pointer-events:auto}
+.to-top b{font-size:12px}
+
+#adminView{display:none}
+body.admin #adminView{display:block}
+body.admin #playerView{display:none}
+.admin-block + .admin-block{margin-top:clamp(64px,8vw,96px)}
+.title-band{position:relative;overflow:hidden;padding:clamp(56px,9vw,100px) 0 clamp(36px,5vw,56px)}
+.title-band .wordmark{font-size:clamp(52px,10vw,130px)}
+.title-band h1{font-size:clamp(18px,2.2vw,22px);font-weight:900;letter-spacing:.06em;margin-top:18px}
+.title-band .hero-sub{margin-top:6px}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:720px){.presets{grid-template-columns:1fr}}
+.preset{position:relative;background:var(--paper);border:1px solid var(--ink);padding:18px 18px 20px;text-align:left;cursor:pointer;
+  color:var(--ink);font-family:inherit;transition:background .15s ease,color .15s ease;
+  clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,0 100%)}
+.preset:hover{background:var(--paper-2)}
+.preset.active{background:var(--void);color:#fff}
+.preset.active::before{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--grad)}
+.preset b{display:block;font-weight:900;font-size:22px;letter-spacing:-.01em;margin-bottom:6px}
+.preset span{font-size:12px;color:inherit;opacity:.75;line-height:1.6;display:block}
+.rankgrid,.kdgrid{display:grid;gap:6px}
+.seasons{display:flex;flex-wrap:wrap;gap:6px}
+.season{min-width:54px;padding:8px 10px;background:var(--paper);border:1px solid #bdbdbd;color:var(--ink-2);
+  font-family:inherit;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer;transition:all .12s ease}
+.season:hover{border-color:var(--ink);color:var(--ink)}
+.season.on{background:var(--void);border-color:var(--void);color:#fff}
+.rankrow{display:grid;grid-template-columns:1fr 92px 104px;gap:10px;align-items:center;background:var(--paper);border:1px solid var(--rule);padding:9px 14px}
+@media(max-width:560px){.rankrow{grid-template-columns:1fr 68px 88px;gap:6px;padding:8px 10px}}
+.rankrow.off{opacity:.45}
+.rankrow .rname{font-weight:900;font-size:14px}
+.rankrow input[type=number],.kdrow input[type=number]{padding:7px 8px;text-align:center}
+.rankrow .toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-2);cursor:pointer;justify-content:flex-end;margin:0}
+.rankrow .toggle input{accent-color:var(--ink)}
+.kdrow{display:grid;grid-template-columns:1fr 92px;gap:10px;align-items:center;background:var(--paper);border:1px solid var(--rule);padding:9px 14px}
+.kdrow .klabel{font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:620px){.duo,.trio{grid-template-columns:1fr}}
+.slider-val{float:right;color:var(--ink);font-variant-numeric:tabular-nums;font-weight:900}
+.urlout{width:100%;background:var(--void);border:0;color:var(--accent);padding:14px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;min-height:96px;resize:vertical;border-radius:0}
+.hint{font-size:12px;color:var(--ink-2);margin-top:8px}
+.hint code,.sub code{color:var(--ink);font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:var(--paper-2);padding:1px 5px}
+.share-actions{display:grid;grid-template-columns:minmax(0,420px) auto;gap:14px;align-items:end;margin-top:16px}
+.share-actions .btn-sub{margin-top:0;height:64px}
+@media(max-width:620px){.share-actions{grid-template-columns:1fr}}
+
+@media(prefers-reduced-motion:no-preference){
+  .ghost span{animation:drift 38s linear infinite alternate}
+  .ghost span:nth-child(2){animation-direction:alternate-reverse}
+  .wordmark span{animation:rise .8s cubic-bezier(.2,.7,.2,1) both}
+  .wordmark span:nth-child(2){animation-delay:.08s}
+  @keyframes drift{from{transform:translateX(0)}to{transform:translateX(-12%)}}
+  @keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body id="top">
+
+<div id="progress"></div>
+
+<header class="topbar">
+  <a class="brand" href="#top"><span class="sparkle" aria-hidden="true">✦</span>MDCUP</a>
+  <nav class="topnav" aria-label="ページ内の移動">
+    <a href="#secTeam">チーム入力</a>
+    <a href="#secTable">ポイント表</a>
+    <a href="#secEntry">エントリー</a>
+  </nav>
+  <a class="menu-box" href="#secEntry">ENTRY<i></i></a>
+</header>
+
+<div id="playerView">
+  <div class="hero">
+    <div id="bgImage"></div>
+    <div id="bgScrim"></div>
+    <div id="bgMark"></div>
+    <div class="dots"></div>
+    <div id="grain"></div>
+    <div id="scan"></div>
+    <div class="ghost" aria-hidden="true"><span>MDCUP POINT CHECK MDCUP</span><span>SQUAD UP. LOCK IN. SQUAD UP.</span></div>
+    <div class="hero-inner">
+      <img class="hero-logo" id="heroLogo" alt="">
+      <span class="kicker" id="eventLabel">MDCUP</span>
+      <p class="wordmark" aria-hidden="true"><span>POINT</span><span>CHECKER</span></p>
+      <div class="hero-row">
+        <div>
+          <h1 id="heroTitle">ポイントチェッカー</h1>
+          <p class="hero-sub">3人分のランクとトータルKDを入れると、チーム合計ポイントが出ます。上限内に収まっていれば、そのままエントリーへ進めます。</p>
+        </div>
+        <div class="plate">
+          <span class="plabel">POINT LIMIT</span>
+          <span class="pval" id="plateVal">25</span><span class="punit">PT</span>
+        </div>
+      </div>
+      <ol class="hero-steps">
+        <li><b>01</b>3人分を入力する</li>
+        <li><b>02</b>上限内か確かめる</li>
+        <li><b>03</b>フォームへ進む</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="gauge-shell dark">
+    <div class="wrap">
+      <div class="gauge-top">
+        <div class="gauge-label">TEAM TOTAL<small>チーム合計</small></div>
+        <div class="gauge-num" id="gaugeNum"><span class="cur">0</span><span class="cap"> / 25 PT</span></div>
+      </div>
+      <div class="ticks" id="ticks"></div>
+      <div class="gauge-msg idle" id="gaugeMsg">3人分を入力してください</div>
+    </div>
+  </div>
+
+  <section class="band grey" id="secTeam">
+    <div class="wrap">
+      <div class="shead" data-ghost="SQUAD"><p class="en" aria-hidden="true">TEAM<span class="sparkle">✦</span></p><h2>チーム</h2></div>
+      <p class="sub">チーム名と、メンバー3人のApex IDを入力します。</p>
+      <div class="field team-field">
+        <label for="teamName">チーム名</label>
+        <input type="text" id="teamName" placeholder="例：MD BOYS">
+      </div>
+      <div class="members" id="members"></div>
+    </div>
+  </section>
+
+  <section class="band light" id="secTable">
+    <div class="wrap">
+      <div class="shead" data-ghost="TABLE"><p class="en" aria-hidden="true">POINT TABLE</p><h2>ポイント表</h2></div>
+      <p class="sub" id="matrixSub"></p>
+      <div class="tablewrap"><table id="matrix"></table></div>
+      <div class="notice" id="rulesNotice"></div>
+    </div>
+  </section>
+
+  <section class="band dark" id="secEntry">
+    <div class="dots"></div>
+    <div class="wrap">
+      <div class="shead" data-ghost="ENTRY"><p class="en" aria-hidden="true">ENTRY<span class="sparkle">✦</span></p><h2>エントリー</h2></div>
+      <div class="entry-grid">
+        <div>
+          <p class="entry-lead">入力内容が、そのまま<br>フォームに入ります。</p>
+          <p>内容を確認してから送信してください。</p>
+        </div>
+        <div class="entry-box">
+          <button class="btn" id="submitBtn" disabled>エントリーフォームへ進む</button>
+          <p class="btn-note" id="submitNote">まず3人分の入力を完了してください</p>
+          <button class="btn-sub" id="resetBtn">入力内容を消去する</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="adminView">
+  <div class="title-band dark">
+    <div class="dots"></div>
+    <div class="wrap" style="position:relative">
+      <span class="kicker">ORGANIZER</span>
+      <p class="wordmark" aria-hidden="true"><span>SETTINGS</span></p>
+      <h1>大会設定</h1>
+      <p class="hero-sub">プリセットを選び、外観とポイントを調整します。最後に出るURLを告知に貼れば、参加者にはその設定で表示されます。</p>
+    </div>
+  </div>
+
+  <div class="band grey">
+  <div class="wrap">
+    <section class="admin-block">
+      <div class="shead" data-ghost="PRESET"><p class="en" aria-hidden="true">PRESET</p><h2>プリセット</h2></div>
+      <p class="sub">大会のレベルに合わせて選びます。選んだあと個別に微調整できます。</p>
+      <div class="presets" id="presets"></div>
+    </section>
+
+    <section class="admin-block">
+      <div class="shead" data-ghost="STYLE"><p class="en" aria-hidden="true">APPEARANCE</p><h2>外観</h2></div>
+      <p class="sub">画像は公開URLを指定します。GitHub Pagesの同じリポジトリに置いた場合は <code>bg/day1.jpg</code> のような相対パスでも動きます。背景画像は画面上部の黒い帯に表示されます。</p>
+      <div class="duo">
+        <div class="field">
+          <label for="thBg">背景画像URL</label>
+          <input type="text" id="thBg" placeholder="bg/day1.jpg">
+        </div>
+        <div class="field">
+          <label for="thLogo">ロゴ画像URL</label>
+          <input type="text" id="thLogo" placeholder="logo/mdcup.png">
+        </div>
+      </div>
+      <div class="trio">
+        <div class="field">
+          <label for="thDisplayFont">見出しの書体</label>
+          <select id="thDisplayFont"></select>
+        </div>
+        <div class="field">
+          <label for="thBodyFont">本文の書体</label>
+          <select id="thBodyFont"></select>
+        </div>
+        <div class="field">
+          <label for="thPanel">上限表示の下地の濃さ <span class="slider-val" id="vPanel"></span></label>
+          <input type="range" id="thPanel" min="0" max="100" step="1">
+        </div>
+      </div>
+      <div class="trio">
+        <div class="field">
+          <label for="thAccent">アクセントカラー</label>
+          <input type="color" id="thAccent" value="#8cdcfa">
+        </div>
+        <div class="field">
+          <label for="thText">黒い帯の文字色</label>
+          <input type="color" id="thText" value="#ffffff">
+        </div>
+        <div class="field">
+          <label for="thMuted">黒い帯の補足の文字色</label>
+          <input type="color" id="thMuted" value="#a8a8a8">
+        </div>
+      </div>
+      <div class="trio">
+        <div class="field">
+          <label for="thScrim">背景の暗さ <span class="slider-val" id="vScrim"></span></label>
+          <input type="range" id="thScrim" min="0" max="100" step="1">
+        </div>
+        <div class="field">
+          <label for="thGrain">ノイズの強さ <span class="slider-val" id="vGrain"></span></label>
+          <input type="range" id="thGrain" min="0" max="100" step="1">
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn-sub" id="thReset" style="margin-top:0;width:100%">外観を初期値に戻す</button>
+        </div>
+      </div>
+      <div class="duo">
+        <div class="field">
+          <label for="thMark">背景ロゴの濃さ <span class="slider-val" id="vMark"></span></label>
+          <input type="range" id="thMark" min="0" max="60" step="1">
+        </div>
+        <div class="field">
+          <label for="thScan">走査線の濃さ <span class="slider-val" id="vScan"></span></label>
+          <input type="range" id="thScan" min="0" max="60" step="1">
+        </div>
+      </div>
+      <div class="notice warn" id="contrastWarn" style="display:none">
+        <b>文字色と背景のコントラストが不足しています。</b>
+        このままだと参加者が読みにくくなります。文字色を明るくするか、背景の暗さを上げてください。
+      </div>
+      <div class="notice">
+        <b>画像そのものはURLに埋め込めません。</b>
+        base64にすると設定URLが数百KBになり、告知に貼れなくなります。画像はリポジトリか画像ホスティングに置いて、そのURLを指定してください。
+      </div>
+    </section>
+  </div>
+  </div>
+
+  <div class="band light">
+  <div class="wrap">
+    <section class="admin-block">
+      <div class="shead" data-ghost="BASIC"><p class="en" aria-hidden="true">BASIC</p><h2>基本</h2></div>
+      <div class="duo">
+        <div class="field">
+          <label for="cfgName">大会名</label>
+          <input type="text" id="cfgName" placeholder="例：MDCUP SEASON5 / DAY1">
+        </div>
+        <div class="field"><label for="cfgCap">合計上限</label>
+          <input type="number" id="cfgCap" min="1" max="60"></div>
+      </div>
+      <div class="field">
+        <label for="cfgNote">追加の注意書き</label>
+        <input type="text" id="cfgNote" placeholder="除外シーズン以外に伝えたいこと">
+      </div>
+    </section>
+  </div>
+  </div>
+
+  <div class="band grey">
+  <div class="wrap">
+    <section class="admin-block">
+      <div class="shead" data-ghost="SEASON"><p class="en" aria-hidden="true">SEASONS</p><h2>除外シーズン</h2></div>
+      <p class="sub">最高到達ランクの判定から外すシーズンです。番号を押して切り替えます。</p>
+      <div class="seasons" id="seasonGrid"></div>
+      <p class="hint" id="seasonPreview"></p>
+      <div class="notice">
+        <b>S17・S12・S19 はランクがインフレしたシーズンとして、多くの主催が除外しています。</b>
+        除外シーズンを指定するのは主催の標準的な運用です。ここを空にすると、盛りやすかったシーズンのマスターがそのまま通ります。
+      </div>
+    </section>
+  </div>
+  </div>
+
+  <div class="band light">
+  <div class="wrap">
+    <section class="admin-block">
+      <div class="shead" data-ghost="BONUS"><p class="en" aria-hidden="true">START BONUS</p><h2>開始ボーナス</h2></div>
+      <p class="sub">使い切らなかったptを、試合開始時の持ち点に変換します。</p>
+      <label class="check" for="bnOn" style="max-width:420px">
+        <input type="checkbox" id="bnOn">
+        <span>開始ボーナスを使う<i>上限まで使わない編成に、開始時の持ち点で報いる</i></span>
+      </label>
+      <div id="bonusOpts" style="margin-top:14px">
+        <div class="duo">
+          <div class="field"><label for="bnRate">1ptあたりの点数</label>
+            <input type="number" id="bnRate" min="0" max="5" step="0.5"></div>
+          <div class="field"><label for="bnMax">ボーナスの上限</label>
+            <input type="number" id="bnMax" min="0" max="60"></div>
+        </div>
+        <p class="hint" id="bonusPreview"></p>
+      </div>
+      <div class="notice">
+        <b>編成の自由を奪わずに、上に寄せた編成との差を吸収できます。</b>
+        上限いっぱいまで使ったチームは持ち点ゼロ、余らせたチームは先行してスタートします。集中編成を禁止する必要がなくなります。
+      </div>
+    </section>
+  </div>
+  </div>
+
+  <div class="band grey">
+  <div class="wrap">
+    <section class="admin-block">
+      <div class="shead" data-ghost="RANK"><p class="en" aria-hidden="true">RANK POINTS</p><h2>ランクごとのポイント</h2></div>
+      <p class="sub">チェックを外したランクは出場不可になり、参加者の選択肢から消えます。</p>
+      <div class="rankgrid" id="rankGrid"></div>
+      <div class="notice">
+        <b>最高ランクは8ptに置いてください。</b>
+        KD補正の+2と合わせてちょうど10ptに届きます。最高ランクを10ptにすると、上位帯だけKD加点が頭打ちで消えます。
+      </div>
+    </section>
+  </div>
+  </div>
+
+  <div class="band light">
+  <div class="wrap">
+    <section class="admin-block">
+      <div class="shead" data-ghost="KD"><p class="en" aria-hidden="true">KD</p><h2>KD補正</h2></div>
+      <p class="sub">トータルKDの区切りごとの加算・減算です。</p>
+      <div class="kdgrid" id="kdGrid"></div>
+    </section>
+  </div>
+  </div>
+
+  <div class="band grey">
+  <div class="wrap">
+    <section class="admin-block">
+      <div class="shead" data-ghost="PRED"><p class="en" aria-hidden="true">PREDATOR</p><h2>プレデターの到達区分</h2></div>
+      <p class="sub">プレデターを選んだ参加者にだけ表示される選択肢です。ランク基準からの増減を設定します。</p>
+      <div class="kdgrid" id="predGrid"></div>
+      <div class="notice">
+        <b>プレデターは上位750位の椅子取りです。</b>
+        到達しただけの「タッチ」と、スプリットを維持しきった層では実力が違います。維持組にはプレデターバッジが残り、両スプリット維持なら光るバッジになるので、スクリーンショットで判別できます。タッチのみの申告はバッジが存在しないことで確認できます。
+      </div>
+    </section>
+  </div>
+  </div>
+
+  <div class="band light">
+  <div class="wrap">
+    <section class="admin-block">
+      <div class="shead" data-ghost="ALGS"><p class="en" aria-hidden="true">COMPETITIVE</p><h2>競技経験の加算</h2></div>
+      <p class="sub">ALGS チャレンジャーサーキット（CC）で何ラウンドまで勝ち上がったかの加算です。参加者は競技経験にチェックを入れると、この一覧から選ぶ形になります。</p>
+      <div class="kdgrid" id="compGrid"></div>
+      <div class="notice">
+        <b>CCは各ラウンドで上位10チームだけが次に進みます。</b>
+        だからラウンド数がそのまま実力の段階になります。ブラケットの正式名称は年度で変わるので、参加者には「何ラウンド勝ち上がったか」を申告してもらう形にしています。
+      </div>
+    </section>
+  </div>
+  </div>
+
+  <div class="band grey">
+  <div class="wrap">
+    <section class="admin-block">
+      <div class="shead" data-ghost="FORM"><p class="en" aria-hidden="true">ENTRY FORM</p><h2>エントリーフォーム</h2></div>
+      <p class="sub">Googleフォームの事前入力URLから取得した値を貼り付けます。手順は setup.txt にあります。</p>
+      <div class="field">
+        <label for="gfBase">フォームURL（/viewform まで）</label>
+        <input type="text" id="gfBase" placeholder="https://docs.google.com/forms/d/e/XXXX/viewform">
+      </div>
+      <div class="duo" id="gfEntries"></div>
+    </section>
+  </div>
+  </div>
+
+  <div class="band light">
+  <div class="wrap">
+    <section class="admin-block">
+      <div class="shead" data-ghost="SHARE"><p class="en" aria-hidden="true">SHARE URL<span class="sparkle">✦</span></p><h2>告知用URL</h2></div>
+      <p class="sub">この設定をURLに埋め込みます。参加者にはこのURLを配ってください。</p>
+      <textarea class="urlout" id="shareUrl" readonly></textarea>
+      <p class="hint">設定は <code>#</code> 以降に入るためサーバーには送信されません。長い場合は短縮URLを通してください。</p>
+      <div class="share-actions">
+        <button class="btn" id="copyUrl">URLをコピー</button>
+        <button class="btn-sub" id="toPlayer">参加者の画面を確認する</button>
+      </div>
+    </section>
+  </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>入力内容はこのブラウザ内にのみ保存されます。送信するまで主催者には届きません。</span>
+  </div>
+</footer>
+
+<a class="to-top" id="toTop" href="#top" aria-label="ページの先頭へ"><b>▲</b>TOP</a>
+
+<script>
+const RANKS = [
+  { id:'bronze',    name:'ブロンズ' },
+  { id:'silver',    name:'シルバー' },
+  { id:'gold',      name:'ゴールド' },
+  { id:'platinum',  name:'プラチナ' },
+  { id:'diamond43', name:'ダイヤ4-3' },
+  { id:'diamond21', name:'ダイヤ2-1' },
+  { id:'master',    name:'マスター' },
+  { id:'predator',  name:'プレデター' }
+];
+const GF_FIELDS = [
+  { key:'teamName',  label:'チーム名' },
+  { key:'member1',   label:'メンバー1' },
+  { key:'member2',   label:'メンバー2' },
+  { key:'member3',   label:'メンバー3' },
+  { key:'totalPt',   label:'合計ポイント' },
+  { key:'breakdown', label:'申告内容まとめ' }
+];
+const DEFAULT_NOTE = '';
+
+const SEASON_MAX = 30;
+const DEFAULT_SEASONS = [1,2,3,4,5,12,17,19];
+
+const DEFAULT_BONUS = { on:false, rate:1, max:12 };
+const DEFAULT_KD = [
+  { max:0.8,  adj:-2 },
+  { max:1.1,  adj:-1 },
+  { max:1.5,  adj: 0 },
+  { max:2.0,  adj: 1 },
+  { max:null, adj: 2 }
+];
+const FONTS = [
+  { id:'anton',  label:'Anton（英字・極太）',        css:"'Anton',Impact,sans-serif",             g:'Anton' },
+  { id:'bebas',  label:'Bebas Neue（英字・細長）',    css:"'Bebas Neue',Impact,sans-serif",        g:'Bebas+Neue' },
+  { id:'oswald', label:'Oswald（英字・条件付き）',    css:"'Oswald',Impact,sans-serif",            g:'Oswald:wght@500;700' },
+  { id:'dela',   label:'Dela Gothic One（和文・極太）', css:"'Dela Gothic One',sans-serif",        g:'Dela+Gothic+One' },
+  { id:'reggae', label:'Reggae One（和文・重厚）',    css:"'Reggae One',sans-serif",               g:'Reggae+One' },
+  { id:'train',  label:'Train One（和文・線路調）',   css:"'Train One',sans-serif",                g:'Train+One' },
+  { id:'dot',    label:'DotGothic16（和文・ドット）', css:"'DotGothic16',sans-serif",              g:'DotGothic16' },
+  { id:'rocknroll', label:'RocknRoll One（和文・丸み）', css:"'RocknRoll One',sans-serif",         g:'RocknRoll+One' },
+  { id:'zen',    label:'Zen Kaku Gothic New（和文）', css:"'Zen Kaku Gothic New',sans-serif",      g:'Zen+Kaku+Gothic+New:wght@400;500;700;900' },
+  { id:'mplus',  label:'M PLUS 1p（和文）',           css:"'M PLUS 1p',sans-serif",                g:'M+PLUS+1p:wght@400;500;700;900' },
+  { id:'noto',   label:'Noto Sans JP（和文・標準）',  css:"'Noto Sans JP',sans-serif",             g:'Noto+Sans+JP:wght@400;500;700;900' },
+  { id:'maru',   label:'Zen Maru Gothic（和文・丸ゴシック）', css:"'Zen Maru Gothic',sans-serif",  g:'Zen+Maru+Gothic:wght@400;500;700;900' },
+  { id:'mincho', label:'Shippori Mincho B1（和文・明朝）', css:"'Shippori Mincho B1',serif",       g:'Shippori+Mincho+B1' },
+  { id:'biz',    label:'BIZ UDPGothic（和文・読みやすさ重視）', css:"'BIZ UDPGothic',sans-serif",  g:'BIZ+UDPGothic:wght@400;700' }
+];
+const FALLBACK_BODY = ",-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',Meiryo,sans-serif";
+
+function fontById(id){ return FONTS.find(f => f.id === id) || FONTS[0]; }
+
+const DEFAULT_THEME = {
+  bg:'', logo:'', accent:'#8cdcfa',
+  text:'#ffffff', muted:'#a8a8a8',
+  fontDisplay:'noto', fontBody:'noto',
+  scrim:60, grain:0, mark:10, scan:0, panel:72
+};
+
+const DEFAULT_PRED = [
+  { id:'hold',  label:'維持（プレデターバッジあり）', adj:0 },
+  { id:'touch', label:'タッチのみ（バッジなし）',     adj:-1 }
+];
+
+const DEFAULT_COMP = [
+  { id:'r1',  label:'Round 1 敗退',      adj:1 },
+  { id:'r2',  label:'Round 2 進出',      adj:2 },
+  { id:'r3',  label:'Round 3 進出',      adj:3 },
+  { id:'r4',  label:'Round 4 進出以上',  adj:5 },
+  { id:'pro', label:'プロリーグ経験あり', adj:7 }
+];
+
+const PRESETS = {
+  enjoy: {
+    label:'ENJOY',
+    desc:'初心者〜中位。ダイヤ4-3が天井。ブロンズから参加可',
+    cfg:{ name:'MDCUP / ENJOY', cap:25,
+      points:{ bronze:2, silver:3, gold:5, platinum:6, diamond43:8 } }
+  },
+  standard: {
+    label:'STANDARD',
+    desc:'全ランク。ブロンズからプレデターまで参加可',
+    cfg:{ name:'MDCUP / STANDARD', cap:25,
+      points:{ bronze:1, silver:2, gold:3, platinum:4, diamond43:5, diamond21:6, master:7, predator:8 } }
+  },
+  open: {
+    label:'OPEN',
+    desc:'上位帯のみ。プレデターまで。プラチナ未満は不可',
+    cfg:{ name:'MDCUP / OPEN', cap:25,
+      points:{ platinum:2, diamond43:4, diamond21:5, master:7, predator:8 } }
+  }
+};
+
+function defaultConfig(){
+  return JSON.parse(JSON.stringify({
+    preset:'standard',
+    name: PRESETS.standard.cfg.name,
+    cap:  PRESETS.standard.cfg.cap,
+    note: DEFAULT_NOTE,
+    seasons: DEFAULT_SEASONS,
+    bonus: DEFAULT_BONUS,
+    points: PRESETS.standard.cfg.points,
+    kd: DEFAULT_KD,
+    pred: DEFAULT_PRED,
+    comp: DEFAULT_COMP,
+    theme: DEFAULT_THEME,
+    gf: { base:'', entry:{ teamName:'', member1:'', member2:'', member3:'', totalPt:'', breakdown:'' } }
+  }));
+}
+
+function kdBandIndex(kd, bands){
+  for (let i = 0; i < bands.length; i++){
+    const m = bands[i].max;
+    if (m === null || m === undefined) return i;
+    if (kd < m) return i;
+  }
+  return bands.length - 1;
+}
+function kdLabel(bands, i){
+  const lo = i === 0 ? null : bands[i-1].max;
+  const hi = bands[i].max;
+  if (lo === null) return '〜' + hi;
+  if (hi === null || hi === undefined) return lo + '〜';
+  return lo + '〜' + hi;
+}
+function compTier(compId, cfg){
+  if (!compId) return null;
+  return (cfg.comp || []).find(c => c.id === compId) || null;
+}
+
+function predTier(predId, cfg){
+  if (!predId) return null;
+  return (cfg.pred || []).find(x => x.id === predId) || null;
+}
+
+function calcMember(rankId, kd, compId, cfg, predId){
+  if (!rankId) return { ok:false, reason:'empty' };
+  const raw = cfg.points[rankId];
+  if (raw === undefined || raw === null) return { ok:false, reason:'outOfRange' };
+  if (kd === null || kd === undefined || isNaN(kd) || kd < 0) return { ok:false, reason:'empty' };
+
+  let base = raw, predAdj = 0, predLabel = '';
+  if (rankId === 'predator'){
+    const pt = predTier(predId, cfg);
+    if (pt){ predAdj = pt.adj; predLabel = pt.label; base = raw + pt.adj; }
+  }
+
+  const bi = kdBandIndex(kd, cfg.kd);
+  const adj = cfg.kd[bi].adj;
+  const core = Math.min(10, Math.max(0, base + adj));
+  const tier = compTier(compId, cfg);
+  const pro = tier ? tier.adj : 0;
+  return { ok:true, base:raw, predAdj, predLabel, kdAdj:adj, bandIndex:bi,
+           pro, tierLabel: tier ? tier.label : '', pt:core + pro };
+}
+
+function compRange(cfg){
+  const a = (cfg.comp || []).map(c => c.adj);
+  return a.length ? { min:Math.min.apply(null,a), max:Math.max.apply(null,a) } : { min:0, max:0 };
+}
+function seasonText(list){
+  const a = (list || []).slice().filter(n => Number.isInteger(n) && n >= 1).sort((x, y) => x - y);
+  if (!a.length) return '';
+  const parts = [];
+  let st = a[0], prev = a[0];
+  for (let i = 1; i <= a.length; i++){
+    if (i < a.length && a[i] === prev + 1){ prev = a[i]; continue; }
+    parts.push(st === prev ? 'S' + st : (prev - st === 1 ? 'S' + st + '・S' + prev : 'S' + st + '〜' + prev));
+    if (i < a.length){ st = a[i]; prev = a[i]; }
+  }
+  return parts.join('・');
+}
+
+function startBonus(total, cfg){
+  const b = Object.assign({}, DEFAULT_BONUS, cfg.bonus || {});
+  if (!b.on) return 0;
+  const left = Math.max(0, cfg.cap - total);
+  return Math.min(b.max, Math.round(left * b.rate));
+}
+
+function playableRanks(cfg){
+  return RANKS.filter(r => cfg.points[r.id] !== undefined && cfg.points[r.id] !== null);
+}
+
+function encodeCfg(cfg){
+  const bytes = new TextEncoder().encode(JSON.stringify(cfg));
+  let bin = '';
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function decodeCfg(s){
+  try {
+    let b64 = s.replace(/-/g,'+').replace(/_/g,'/');
+    while (b64.length % 4) b64 += '=';
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const cfg = JSON.parse(new TextDecoder().decode(bytes));
+    if (!cfg || typeof cfg.points !== 'object' || !Array.isArray(cfg.kd)) return null;
+    return cfg;
+  } catch (e) { return null; }
+}
+
+function safeImageUrl(u){
+  if (!u) return '';
+  const s = String(u).trim();
+  if (/^(javascript|data|vbscript|file):/i.test(s)) return '';
+  if (/[\r\n"')]/.test(s)) return '';
+  return s;
+}
+function safeColor(c, fallback){
+  return /^#[0-9a-fA-F]{6}$/.test(String(c || '')) ? c : (fallback || '#86ff1f');
+}
+function relLum(hex){
+  const h = safeColor(hex).slice(1);
+  const n = parseInt(h, 16);
+  const ch = [((n >> 16) & 255), ((n >> 8) & 255), (n & 255)].map(v => {
+    const x = v / 255;
+    return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+}
+
+function contrastRatio(a, b){
+  const l1 = relLum(a), l2 = relLum(b);
+  const hi = Math.max(l1, l2), lo = Math.min(l1, l2);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+function readableOn(hex){
+  const h = safeColor(hex).slice(1);
+  const n = parseInt(h, 16);
+  const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  return lum > 0.55 ? '#050708' : '#ffffff';
+}
+
+function hexToRgba(hex, a){
+  const h = safeColor(hex).slice(1);
+  const n = parseInt(h, 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+
+let CFG = defaultConfig();
+const ENTRY_KEY = 'mdcup_entry_v1';
+const ADMIN_KEY = 'mdcup_config_v1';
+function blankMember(){ return { name:'', rank:'', kd:'', comp:'', pred:'hold' }; }
+const state = { teamName:'', members:[blankMember(), blankMember(), blankMember()] };
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function loadThemeFonts(t){
+  const want = [];
+  [fontById(t.fontDisplay), fontById(t.fontBody)].forEach(f => {
+    if (f.g && want.indexOf(f.g) < 0) want.push(f.g);
+  });
+  const link = document.getElementById('themeFonts');
+  if (!link) return;
+  link.href = want.length
+    ? 'https://fonts.googleapis.com/css2?' + want.map(x => 'family=' + x).join('&') + '&display=swap'
+    : '';
+}
+
+function applyTheme(){
+  const t = Object.assign({}, DEFAULT_THEME, CFG.theme || {});
+  const root = document.documentElement.style;
+  const accent = safeColor(t.accent);
+  root.setProperty('--accent', accent);
+  root.setProperty('--accent-dim', hexToRgba(accent, .16));
+  root.setProperty('--text', safeColor(t.text, DEFAULT_THEME.text));
+  root.setProperty('--muted', safeColor(t.muted, DEFAULT_THEME.muted));
+
+  const pa = Math.min(100, Math.max(0, Number(t.panel) || 0)) / 100;
+  root.setProperty('--glass', 'rgba(24,24,24,' + pa + ')');
+  root.setProperty('--glass-2', 'rgba(24,24,24,' + Math.min(1, pa + .1) + ')');
+  root.setProperty('--grad', accent.toLowerCase() === DEFAULT_THEME.accent
+    ? 'linear-gradient(90deg,#8cdcfa,#c9bdf5 52%,#f2c2ee)'
+    : 'linear-gradient(90deg,' + accent + ',' + accent + ')');
+
+  root.setProperty('--on-accent', readableOn(accent));
+  root.setProperty('--font-display', fontById(t.fontDisplay).css);
+  root.setProperty('--font-body', fontById(t.fontBody).css + FALLBACK_BODY);
+  loadThemeFonts(t);
+  root.setProperty('--scrim', (Number(t.scrim) || 0) / 100);
+  root.setProperty('--grain', (Number(t.grain) || 0) / 100);
+  root.setProperty('--mark',  (Number(t.mark)  || 0) / 100);
+
+  const bg = safeImageUrl(t.bg);
+  const logo = safeImageUrl(t.logo);
+  document.getElementById('bgImage').style.backgroundImage = bg ? 'url("' + bg + '")' : 'none';
+  document.getElementById('bgMark').style.backgroundImage = logo ? 'url("' + logo + '")' : 'none';
+  document.getElementById('scan').style.opacity = (Number(t.scan) || 0) / 100;
+
+  const hl = document.getElementById('heroLogo');
+  if (logo){ hl.src = logo; hl.classList.add('on'); hl.alt = CFG.name || 'MDCUP'; }
+  else { hl.removeAttribute('src'); hl.classList.remove('on'); }
+}
+
+function buildTicks(){
+  const box = document.getElementById('ticks');
+  box.innerHTML = '';
+  for (let i = 0; i < CFG.cap; i++){
+    const d = document.createElement('div');
+    d.className = 'tick';
+    box.appendChild(d);
+  }
+}
+
+function memberCard(i){
+  const opts = playableRanks(CFG).map(r => '<option value="' + r.id + '">' + r.name + '</option>').join('');
+  const compOpts = (CFG.comp || []).map(c =>
+    '<option value="' + c.id + '">' + escapeHtml(c.label) + '（+' + c.adj + '）</option>').join('');
+  const predOpts = (CFG.pred || []).map(x =>
+    '<option value="' + x.id + '">' + escapeHtml(x.label) +
+    (x.adj ? '（' + x.adj + '）' : '') + '</option>').join('');
+  return '' +
+  '<div class="member">' +
+    '<div class="member-head"><div class="slot">PLAYER 0' + (i+1) + '</div>' +
+    '<div class="pt-badge zero" data-badge="' + i + '">—</div></div>' +
+    '<div class="member-body">' +
+    '<div class="field"><label for="name' + i + '">Apex ID</label>' +
+      '<input type="text" id="name' + i + '" data-f="name" data-i="' + i + '" placeholder="ゲーム内の名前"></div>' +
+    '<div class="field"><label for="rank' + i + '">最高到達ランク</label>' +
+      '<select id="rank' + i + '" data-f="rank" data-i="' + i + '"><option value="">選択してください</option>' + opts + '</select></div>' +
+    '<div class="field pred-wrap" data-predwrap="' + i + '">' +
+      '<label for="pred' + i + '">プレデターの到達区分</label>' +
+      '<select id="pred' + i + '" data-f="pred" data-i="' + i + '">' + predOpts + '</select></div>' +
+    '<div class="field"><label for="kd' + i + '">トータルKD（生涯）</label>' +
+      '<input type="number" id="kd' + i + '" data-f="kd" data-i="' + i + '" step="0.01" min="0" placeholder="例：1.24"></div>' +
+    '<label class="check" for="pro' + i + '"><input type="checkbox" id="pro' + i + '" data-f="compOn" data-i="' + i + '">' +
+      '<span>競技経験あり<i>ALGS CC・プロリーグ</i></span></label>' +
+    '<div class="field comp-wrap" data-compwrap="' + i + '">' +
+      '<label for="comp' + i + '">CCの到達ラウンド</label>' +
+      '<select id="comp' + i + '" data-f="comp" data-i="' + i + '">' + compOpts + '</select></div>' +
+    '<div class="breakdown" data-bd="' + i + '"></div>' +
+  '</div></div>';
+}
+
+function renderMembers(){
+  document.getElementById('members').innerHTML = [0,1,2].map(memberCard).join('');
+  document.querySelectorAll('#members [data-f]').forEach(el => {
+    el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', e => {
+      const i = +e.target.dataset.i, f = e.target.dataset.f;
+      if (f === 'compOn'){
+        const first = (CFG.comp && CFG.comp[0]) ? CFG.comp[0].id : '';
+        state.members[i].comp = e.target.checked ? first : '';
+        const sel = document.getElementById('comp' + i);
+        if (sel) sel.value = state.members[i].comp;
+      } else {
+        state.members[i][f] = e.target.value;
+      }
+      syncCompUI();
+      saveEntry(); updatePlayer();
+    });
+  });
+  syncCompUI();
+}
+
+function syncCompUI(){
+  state.members.forEach((m, i) => {
+    const wrap = document.querySelector('[data-compwrap="' + i + '"]');
+    const box = document.getElementById('pro' + i);
+    if (wrap && box){
+      const on = !!m.comp;
+      box.checked = on;
+      wrap.style.display = on ? 'block' : 'none';
+    }
+    const pw = document.querySelector('[data-predwrap="' + i + '"]');
+    const ps = document.getElementById('pred' + i);
+    if (pw && ps){
+      const isPred = m.rank === 'predator';
+      pw.style.display = isPred ? 'block' : 'none';
+      if (isPred && !m.pred) state.members[i].pred = 'hold';
+      ps.value = state.members[i].pred || 'hold';
+    }
+  });
+}
+
+function renderMatrix(){
+  const rows = playableRanks(CFG).slice().reverse();
+  const head = '<thead><tr><th style="text-align:left">ランク \\ KD</th>' +
+    CFG.kd.map((b, i) => '<th>' + kdLabel(CFG.kd, i) + '</th>').join('') + '</tr></thead>';
+  const body = rows.map(r => {
+    const cells = CFG.kd.map(b => {
+      const v = Math.min(10, Math.max(0, CFG.points[r.id] + b.adj));
+      return '<td class="' + (v === 10 ? 'hi' : (v >= 6 ? 'mid' : '')) + '">' + v + '</td>';
+    }).join('');
+    return '<tr><th>' + r.name + '</th>' + cells + '</tr>';
+  }).join('');
+  document.getElementById('matrix').innerHTML = head + '<tbody>' + body + '</tbody>';
+
+  const pr = playableRanks(CFG);
+  const range = pr.length ? pr[0].name + ' 〜 ' + pr[pr.length-1].name : '未設定';
+  const cr = compRange(CFG);
+  document.getElementById('matrixSub').textContent =
+    'この大会の出場範囲は ' + range + '。競技経験のある選手は、到達段階に応じて表の値に +' +
+    cr.min + '〜+' + cr.max + 'pt されます。';
+  document.getElementById('rulesNotice').innerHTML =
+    (seasonText(CFG.seasons) ? '<b>' + seasonText(CFG.seasons) + ' は全ランクカウントしません。</b><br>' : '') +
+    (CFG.note ? escapeHtml(CFG.note) + '<br>' : '') +
+    'ランクは除外シーズンを抜いた最高到達ランクを申告してください。' +
+    (CFG.points.predator !== undefined && CFG.points.predator !== null
+      ? 'プレデターは、スプリットまたはシーズンを維持しきってバッジが残っている場合のみ表の値です。到達しただけ（タッチ）の場合は ' +
+        ((CFG.pred || []).find(x => x.id === 'touch') || { adj:-1 }).adj + 'pt されます。' : '') +
+    'KDはトラッカーサイトの生涯トータル値です。エントリー後、バッジのスクリーンショット提出をお願いします。';
+}
+
+function updatePlayer(){
+  const results = state.members.map(m =>
+    calcMember(m.rank, m.kd === '' ? null : parseFloat(m.kd), m.comp, CFG, m.pred));
+
+  results.forEach((r, i) => {
+    const badge = document.querySelector('[data-badge="' + i + '"]');
+    const bd = document.querySelector('[data-bd="' + i + '"]');
+    if (!badge) return;
+    badge.className = 'pt-badge';
+    if (!r.ok){
+      if (r.reason === 'outOfRange'){ badge.classList.add('blocked'); badge.textContent = '出場不可'; }
+      else { badge.classList.add('zero'); badge.textContent = '—'; }
+      bd.innerHTML = '';
+      return;
+    }
+    badge.innerHTML = r.pt + '<small>PT</small>';
+    const sign = r.kdAdj > 0 ? '+' : '';
+    const cls = r.kdAdj < 0 ? 'minus' : (r.kdAdj > 0 ? 'plus' : '');
+    bd.innerHTML =
+      '<div><span>ランク基準</span><span class="v">' + r.base + '</span></div>' +
+      (r.predAdj ? '<div><span>プレデタータッチ</span><span class="v minus">' + r.predAdj + '</span></div>' : '') +
+      '<div><span>KD補正（' + kdLabel(CFG.kd, r.bandIndex) + '）</span>' +
+      '<span class="v ' + cls + '">' + sign + r.kdAdj + '</span></div>' +
+      (r.pro ? '<div><span>' + escapeHtml(r.tierLabel) + '</span><span class="v plus">+' + r.pro + '</span></div>' : '');
+  });
+
+  const allDone = results.every(r => r.ok);
+  const blocked = results.some(r => !r.ok && r.reason === 'outOfRange');
+  const total = results.reduce((s, r) => s + (r.ok ? r.pt : 0), 0);
+  const over = total > CFG.cap;
+
+  const num = document.getElementById('gaugeNum');
+  num.className = 'gauge-num' + (over ? ' over' : '');
+  num.innerHTML = '<span class="cur">' + total + '</span><span class="cap"> / ' + CFG.cap + ' PT</span>';
+  document.querySelectorAll('.tick').forEach((t, i) => {
+    t.className = 'tick' + (i < total ? (over ? ' over' : ' on') : '');
+  });
+
+  const msg = document.getElementById('gaugeMsg');
+  if (blocked){
+    msg.className = 'gauge-msg ng'; msg.textContent = 'この大会の出場範囲外のランクが含まれています';
+  } else if (!allDone){
+    msg.className = 'gauge-msg idle'; msg.textContent = '3人分を入力してください';
+  } else if (over){
+    msg.className = 'gauge-msg ng'; msg.textContent = (total - CFG.cap) + 'pt 超過しています。メンバーを見直してください';
+  } else {
+    const left = CFG.cap - total;
+    const bn = startBonus(total, CFG);
+    msg.className = 'gauge-msg ok';
+    msg.textContent = bn > 0
+      ? '上限内です。残り ' + left + 'pt → 開始ボーナス ' + bn + '点'
+      : '上限内です。残り ' + left + 'pt';
+  }
+
+  const named = state.members.every(m => m.name.trim() !== '') && state.teamName.trim() !== '';
+  const hasForm = !!CFG.gf.base;
+  const ready = allDone && !over && named && hasForm;
+  document.getElementById('submitBtn').disabled = !ready;
+  const note = document.getElementById('submitNote');
+  if (ready) note.textContent = 'フォームが新しいタブで開きます';
+  else if (allDone && !over && named && !hasForm) note.textContent = '※ 主催者向け：主催者設定でフォームURLを登録してください';
+  else if (allDone && !over && !named) note.textContent = 'チーム名とApex IDを入力してください';
+  else note.textContent = 'まず3人分の入力を完了してください';
+}
+
+function buildFormUrl(){
+  if (!CFG.gf.base) return null;
+  const results = state.members.map(m => calcMember(m.rank, parseFloat(m.kd), m.comp, CFG, m.pred));
+  const total = results.reduce((s, r) => s + r.pt, 0);
+  const lines = state.members.map((m, i) => {
+    const rk = RANKS.find(r => r.id === m.rank);
+    const predNote = results[i].predLabel && results[i].predAdj ? '（タッチ）' : '';
+    return (i+1) + '. ' + m.name + ' / ' + (rk ? rk.name : '-') + predNote + ' / KD ' + m.kd +
+           (results[i].tierLabel ? ' / ' + results[i].tierLabel : '') + ' / ' + results[i].pt + 'pt';
+  });
+  const p = new URLSearchParams();
+  const put = (k, v) => { if (CFG.gf.entry[k]) p.set(CFG.gf.entry[k], v); };
+  put('teamName', state.teamName);
+  put('member1', lines[0]); put('member2', lines[1]); put('member3', lines[2]);
+  put('totalPt', String(total));
+  const bn = startBonus(total, CFG);
+  put('breakdown', CFG.name + '\n' + lines.join('\n') + '\n合計 ' + total + ' / ' + CFG.cap + ' PT' +
+    (bn > 0 ? '\n開始ボーナス ' + bn + '点（余剰 ' + (CFG.cap - total) + 'pt）' : ''));
+  return CFG.gf.base + (CFG.gf.base.indexOf('?') >= 0 ? '&' : '?') + 'usp=pp_url&' + p.toString();
+}
+
+function saveEntry(){ try { localStorage.setItem(ENTRY_KEY, JSON.stringify(state)); } catch(e){} }
+
+function loadEntry(){
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(ENTRY_KEY) || 'null'); } catch(e){ return; }
+  if (!d || !Array.isArray(d.members)) return;
+  state.teamName = d.teamName || '';
+  d.members.forEach((m, i) => { if (i < 3 && m) Object.assign(state.members[i], m); });
+  const tn = document.getElementById('teamName');
+  if (tn) tn.value = state.teamName;
+  state.members.forEach((m, i) => {
+    const n = document.getElementById('name' + i);
+    if (!n) return;
+    n.value = m.name || '';
+    const sel = document.getElementById('rank' + i);
+    sel.value = (CFG.points[m.rank] !== undefined && CFG.points[m.rank] !== null) ? m.rank : '';
+    state.members[i].rank = sel.value;
+    document.getElementById('kd' + i).value = m.kd || '';
+    const valid = (CFG.comp || []).some(c => c.id === m.comp);
+    state.members[i].comp = valid ? m.comp : '';
+    const cs = document.getElementById('comp' + i);
+    if (cs) cs.value = state.members[i].comp;
+    const pv = (CFG.pred || []).some(x => x.id === m.pred);
+    state.members[i].pred = pv ? m.pred : 'hold';
+    const ps = document.getElementById('pred' + i);
+    if (ps) ps.value = state.members[i].pred;
+  });
+  syncCompUI();
+}
+
+function renderPlayer(){
+  document.getElementById('eventLabel').textContent = CFG.name || 'MDCUP';
+  document.getElementById('plateVal').textContent = CFG.cap;
+  document.title = (CFG.name || 'MDCUP') + ' / ポイントチェッカー';
+  applyTheme();
+  buildTicks();
+  renderMembers();
+  renderMatrix();
+}
+
+function renderPresets(){
+  document.getElementById('presets').innerHTML = Object.keys(PRESETS).map(k => {
+    const p = PRESETS[k];
+    return '<button class="preset' + (CFG.preset === k ? ' active' : '') + '" data-preset="' + k + '">' +
+      '<b>' + p.label + '</b><span>' + p.desc + '</span></button>';
+  }).join('');
+  document.querySelectorAll('[data-preset]').forEach(el => {
+    el.addEventListener('click', () => {
+      const p = PRESETS[el.dataset.preset];
+      CFG.preset = el.dataset.preset;
+      CFG.name = p.cfg.name;
+      CFG.cap = p.cfg.cap;
+      CFG.points = JSON.parse(JSON.stringify(p.cfg.points));
+      renderAdmin();
+      syncAll();
+    });
+  });
+}
+
+function renderRankGrid(){
+  document.getElementById('rankGrid').innerHTML = RANKS.map(r => {
+    const on = CFG.points[r.id] !== undefined && CFG.points[r.id] !== null;
+    return '<div class="rankrow' + (on ? '' : ' off') + '">' +
+      '<span class="rname">' + r.name + '</span>' +
+      '<input type="number" min="0" max="10" value="' + (on ? CFG.points[r.id] : '') +
+        '" data-pt="' + r.id + '"' + (on ? '' : ' disabled') + '>' +
+      '<label class="toggle"><input type="checkbox" data-on="' + r.id + '"' + (on ? ' checked' : '') + '>出場可</label>' +
+    '</div>';
+  }).join('');
+  document.querySelectorAll('[data-on]').forEach(el => el.addEventListener('change', e => {
+    const id = e.target.dataset.on;
+    if (e.target.checked) CFG.points[id] = 5; else delete CFG.points[id];
+    CFG.preset = 'custom'; renderAdmin(); syncAll();
+  }));
+  document.querySelectorAll('[data-pt]').forEach(el => el.addEventListener('input', e => {
+    const v = parseInt(e.target.value, 10);
+    if (isNaN(v)) return;
+    CFG.points[e.target.dataset.pt] = Math.min(10, Math.max(0, v));
+    CFG.preset = 'custom'; syncAll();
+  }));
+}
+
+function renderKdGrid(){
+  document.getElementById('kdGrid').innerHTML = CFG.kd.map((b, i) =>
+    '<div class="kdrow"><span class="klabel">KD ' + kdLabel(CFG.kd, i) + '</span>' +
+    '<input type="number" step="1" min="-5" max="5" value="' + b.adj + '" data-kdadj="' + i + '"></div>').join('');
+  document.querySelectorAll('[data-kdadj]').forEach(el => el.addEventListener('input', e => {
+    const v = parseInt(e.target.value, 10);
+    if (isNaN(v)) return;
+    CFG.kd[+e.target.dataset.kdadj].adj = Math.min(5, Math.max(-5, v));
+    CFG.preset = 'custom'; syncAll();
+  }));
+}
+
+function renderSeasonGrid(){
+  const sel = new Set(CFG.seasons || []);
+  let html = '';
+  for (let n = 1; n <= SEASON_MAX; n++){
+    html += '<button class="season' + (sel.has(n) ? ' on' : '') + '" data-season="' + n + '">S' + n + '</button>';
+  }
+  document.getElementById('seasonGrid').innerHTML = html;
+  document.querySelectorAll('[data-season]').forEach(el => el.addEventListener('click', () => {
+    const n = +el.dataset.season;
+    const cur = new Set(CFG.seasons || []);
+    if (cur.has(n)) cur.delete(n); else cur.add(n);
+    CFG.seasons = Array.from(cur).sort((a, b) => a - b);
+    el.classList.toggle('on');
+    updateSeasonPreview();
+    syncAll();
+  }));
+  updateSeasonPreview();
+}
+
+function updateSeasonPreview(){
+  const txt = seasonText(CFG.seasons);
+  document.getElementById('seasonPreview').textContent =
+    txt ? '参加者への表示：' + txt + ' は全ランクカウントしません。' : '除外シーズンなし（全シーズンを対象にします）';
+}
+
+function renderBonusControls(){
+  const b = Object.assign({}, DEFAULT_BONUS, CFG.bonus || {});
+  CFG.bonus = b;
+  document.getElementById('bnOn').checked = !!b.on;
+  document.getElementById('bnRate').value = b.rate;
+  document.getElementById('bnMax').value = b.max;
+  document.getElementById('bonusOpts').style.display = b.on ? 'block' : 'none';
+  const ex = [0, 3, 5, 8].map(left =>
+    left + 'pt余り→' + Math.min(b.max, Math.round(left * b.rate)) + '点').join(' ／ ');
+  document.getElementById('bonusPreview').textContent = b.on ? '例：' + ex : '';
+}
+
+function renderPredGrid(){
+  document.getElementById('predGrid').innerHTML = (CFG.pred || []).map((x, i) =>
+    '<div class="kdrow"><span class="klabel">' + escapeHtml(x.label) + '</span>' +
+    '<input type="number" step="1" min="-5" max="0" value="' + x.adj + '" data-predadj="' + i + '"></div>').join('');
+  document.querySelectorAll('[data-predadj]').forEach(el => el.addEventListener('input', e => {
+    const v = parseInt(e.target.value, 10);
+    if (isNaN(v)) return;
+    CFG.pred[+e.target.dataset.predadj].adj = Math.min(0, Math.max(-5, v));
+    CFG.preset = 'custom';
+    syncAll();
+  }));
+}
+
+function renderCompGrid(){
+  document.getElementById('compGrid').innerHTML = (CFG.comp || []).map((c, i) =>
+    '<div class="kdrow"><span class="klabel">' + escapeHtml(c.label) + '</span>' +
+    '<input type="number" step="1" min="0" max="12" value="' + c.adj + '" data-compadj="' + i + '"></div>').join('');
+  document.querySelectorAll('[data-compadj]').forEach(el => el.addEventListener('input', e => {
+    const v = parseInt(e.target.value, 10);
+    if (isNaN(v)) return;
+    CFG.comp[+e.target.dataset.compadj].adj = Math.min(12, Math.max(0, v));
+    CFG.preset = 'custom';
+    syncAll();
+  }));
+}
+
+function renderGfEntries(){
+  document.getElementById('gfEntries').innerHTML = GF_FIELDS.map(f =>
+    '<div class="field"><label for="gf_' + f.key + '">' + f.label + '</label>' +
+    '<input type="text" id="gf_' + f.key + '" placeholder="entry.123456789"></div>').join('');
+  GF_FIELDS.forEach(f => {
+    const el = document.getElementById('gf_' + f.key);
+    el.value = CFG.gf.entry[f.key] || '';
+    el.addEventListener('input', e => { CFG.gf.entry[f.key] = e.target.value.trim(); syncAll(); });
+  });
+}
+
+function renderThemeControls(){
+  const t = CFG.theme;
+  document.getElementById('thBg').value = t.bg || '';
+  document.getElementById('thLogo').value = t.logo || '';
+  document.getElementById('thAccent').value = safeColor(t.accent, DEFAULT_THEME.accent);
+  document.getElementById('thText').value = safeColor(t.text, DEFAULT_THEME.text);
+  document.getElementById('thMuted').value = safeColor(t.muted, DEFAULT_THEME.muted);
+
+  const opts = FONTS.map(f => '<option value="' + f.id + '">' + f.label + '</option>').join('');
+  const dsel = document.getElementById('thDisplayFont');
+  dsel.innerHTML = opts;
+  dsel.value = fontById(t.fontDisplay).id;
+
+  const bsel = document.getElementById('thBodyFont');
+  bsel.innerHTML = opts;
+  bsel.value = fontById(t.fontBody).id;
+
+  ['scrim','grain','mark','scan','panel'].forEach(k => {
+    const cap = k[0].toUpperCase() + k.slice(1);
+    const el = document.getElementById('th' + cap);
+    if (!el) return;
+    el.value = t[k];
+    document.getElementById('v' + cap).textContent = t[k] + '%';
+  });
+
+  checkContrast();
+}
+
+function checkContrast(){
+  const t = CFG.theme;
+  const scrim = Math.min(100, Math.max(0, Number(t.scrim) || 0)) / 100;
+  const bgApprox = t.bg
+    ? mixHex('#181818', '#7a7a7a', 1 - scrim)
+    : '#181818';
+  const ratio = contrastRatio(safeColor(t.text, DEFAULT_THEME.text), bgApprox);
+  const warn = document.getElementById('contrastWarn');
+  if (warn) warn.style.display = ratio < 4.5 ? 'block' : 'none';
+}
+
+function mixHex(a, b, ratio){
+  const pa = parseInt(safeColor(a).slice(1), 16), pb = parseInt(safeColor(b).slice(1), 16);
+  const r = Math.round((((pa >> 16) & 255) * (1 - ratio)) + (((pb >> 16) & 255) * ratio));
+  const g = Math.round((((pa >> 8) & 255) * (1 - ratio)) + (((pb >> 8) & 255) * ratio));
+  const bl = Math.round(((pa & 255) * (1 - ratio)) + ((pb & 255) * ratio));
+  return '#' + [r, g, bl].map(v => ('0' + Math.min(255, Math.max(0, v)).toString(16)).slice(-2)).join('');
+}
+
+function renderAdmin(){
+  renderPresets();
+  document.getElementById('cfgName').value = CFG.name || '';
+  document.getElementById('cfgCap').value = CFG.cap;
+  document.getElementById('cfgNote').value = CFG.note || '';
+  document.getElementById('gfBase').value = CFG.gf.base || '';
+  renderThemeControls();
+  renderSeasonGrid();
+  renderBonusControls();
+  renderRankGrid();
+  renderKdGrid();
+  renderPredGrid();
+  renderCompGrid();
+  renderGfEntries();
+}
+
+function bindAdminBasics(){
+  const bind = (id, ev, fn) => document.getElementById(id).addEventListener(ev, e => { fn(e.target.value); syncAll(); });
+  bind('cfgName','input', v => { CFG.name = v; });
+  bind('cfgNote','input', v => { CFG.note = v; });
+  document.getElementById('bnOn').addEventListener('change', e => {
+    CFG.bonus.on = e.target.checked;
+    renderBonusControls();
+    syncAll();
+  });
+  document.getElementById('bnRate').addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (isNaN(v)) return;
+    CFG.bonus.rate = Math.min(5, Math.max(0, v));
+    renderBonusControls(); syncAll();
+  });
+  document.getElementById('bnMax').addEventListener('input', e => {
+    const v = parseInt(e.target.value, 10);
+    if (isNaN(v)) return;
+    CFG.bonus.max = Math.min(60, Math.max(0, v));
+    renderBonusControls(); syncAll();
+  });
+  bind('cfgCap','input',  v => { const n = parseInt(v,10); if (!isNaN(n) && n > 0){ CFG.cap = Math.min(60, n); CFG.preset='custom'; } });
+  bind('gfBase','input',  v => { CFG.gf.base = v.trim().split('?')[0]; });
+  bind('thBg','input',    v => { CFG.theme.bg = v.trim(); });
+  bind('thLogo','input',  v => { CFG.theme.logo = v.trim(); });
+  bind('thAccent','input',v => { CFG.theme.accent = safeColor(v, DEFAULT_THEME.accent); });
+  bind('thText','input',  v => { CFG.theme.text = safeColor(v, DEFAULT_THEME.text); checkContrast(); });
+  bind('thMuted','input', v => { CFG.theme.muted = safeColor(v, DEFAULT_THEME.muted); });
+  bind('thDisplayFont','change', v => { CFG.theme.fontDisplay = fontById(v).id; });
+  bind('thBodyFont','change',    v => { CFG.theme.fontBody = fontById(v).id; });
+  document.getElementById('thReset').addEventListener('click', () => {
+    if (!confirm('外観の設定を初期値に戻します。よろしいですか？')) return;
+    const keep = { bg: CFG.theme.bg, logo: CFG.theme.logo };
+    CFG.theme = Object.assign({}, DEFAULT_THEME, keep);
+    renderThemeControls();
+    syncAll();
+  });
+  ['scrim','grain','mark','scan','panel'].forEach(k => {
+    const cap = k[0].toUpperCase() + k.slice(1);
+    const el = document.getElementById('th' + cap);
+    if (!el) return;
+    el.addEventListener('input', e => {
+      CFG.theme[k] = parseInt(e.target.value, 10) || 0;
+      document.getElementById('v' + cap).textContent = CFG.theme[k] + '%';
+      checkContrast();
+      syncAll();
+    });
+  });
+}
+
+function shareUrl(){
+  return location.origin + location.pathname + '#c=' + encodeCfg(CFG);
+}
+
+function syncAll(){
+  try { localStorage.setItem(ADMIN_KEY, JSON.stringify(CFG)); } catch(e){}
+  document.getElementById('shareUrl').value = shareUrl();
+  document.querySelectorAll('.preset').forEach(el => {
+    el.classList.toggle('active', el.dataset.preset === CFG.preset);
+  });
+  renderPlayer();
+  loadEntry();
+  updatePlayer();
+}
+
+function showAdmin(on){
+  document.body.classList.toggle('admin', on);
+  window.scrollTo(0, 0);
+}
+
+function init(){
+  const m = location.hash.match(/[#&]c=([^&]+)/);
+  const fromUrl = m ? decodeCfg(m[1]) : null;
+
+  if (fromUrl){
+    CFG = Object.assign(defaultConfig(), fromUrl);
+  } else {
+    try {
+      const saved = JSON.parse(localStorage.getItem(ADMIN_KEY) || 'null');
+      if (saved && saved.points) CFG = Object.assign(defaultConfig(), saved);
+    } catch(e){}
+  }
+  CFG.theme = Object.assign({}, DEFAULT_THEME, CFG.theme || {});
+  if (!Array.isArray(CFG.comp) || !CFG.comp.length) CFG.comp = JSON.parse(JSON.stringify(DEFAULT_COMP));
+  if (!Array.isArray(CFG.pred) || !CFG.pred.length) CFG.pred = JSON.parse(JSON.stringify(DEFAULT_PRED));
+  if (!Array.isArray(CFG.seasons)) CFG.seasons = DEFAULT_SEASONS.slice();
+  CFG.seasons = CFG.seasons.filter(n => Number.isInteger(n) && n >= 1 && n <= SEASON_MAX);
+  CFG.bonus = Object.assign({}, DEFAULT_BONUS, CFG.bonus || {});
+  delete CFG.pro;
+
+  document.getElementById('teamName').addEventListener('input', e => {
+    state.teamName = e.target.value; saveEntry(); updatePlayer();
+  });
+
+  renderPlayer();
+  loadEntry();
+  updatePlayer();
+  bindAdminBasics();
+  renderAdmin();
+  document.getElementById('shareUrl').value = shareUrl();
+
+  document.getElementById('submitBtn').addEventListener('click', () => {
+    const u = buildFormUrl();
+    if (u) window.open(u, '_blank', 'noopener');
+  });
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (!confirm('入力内容をすべて消去します。よろしいですか？')) return;
+    try { localStorage.removeItem(ENTRY_KEY); } catch(e){}
+    location.reload();
+  });
+  document.getElementById('toPlayer').addEventListener('click', () => showAdmin(false));
+  document.getElementById('copyUrl').addEventListener('click', () => {
+    const btn = document.getElementById('copyUrl');
+    const box = document.getElementById('shareUrl');
+    const done = () => {
+      const old = btn.textContent;
+      btn.textContent = 'コピーしました';
+      setTimeout(() => { btn.textContent = old; }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(box.value).then(done, () => { box.select(); document.execCommand('copy'); done(); });
+    } else { box.select(); document.execCommand('copy'); done(); }
+  });
+
+  const bar = document.getElementById('progress');
+  const top = document.getElementById('toTop');
+  const onScroll = () => {
+    const h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? Math.min(100, scrollY / h * 100) : 0) + '%';
+    top.classList.toggle('on', scrollY > 480);
+  };
+  addEventListener('scroll', onScroll, { passive:true });
+  onScroll();
+  document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+    const el = document.getElementById(a.getAttribute('href').slice(1));
+    if (!el) return;
+    e.preventDefault();
+    el.scrollIntoView();
+  }));
+
+  if (isAdminHash()) showAdmin(true);
+  addEventListener('hashchange', () => showAdmin(isAdminHash()));
+}
+
+function isAdminHash(){ return /(^#|&)admin(&|$)/.test(location.hash); }
+
+if (typeof document !== "undefined") init();
+</script>
+</body>
+</html>
